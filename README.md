@@ -9,6 +9,8 @@ TwitterのWebhookを受け取って、頂いたいいねやRTを集計する
 - Flask
 
 ## Usage
+- サーバを構築し、必要なものをインストールする。
+- Let's Encrypt等を用いてSSLを導入する。
 - uwsgi --ini myapp.ini で起動する。
 - TwitterサーバにCRCを依頼して認証を済ませる。
 - Account Activityが発生する度に、そのJSONデータが ./log/ に蓄積される。
