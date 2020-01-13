@@ -1,5 +1,6 @@
 # Twitter-API-Test
 TwitterのWebhookを受け取って、頂いたいいねやRTを集計する
+2020/01/14現在、開発中である。
 
 ## Dependency
 - CentOS
