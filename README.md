@@ -14,6 +14,7 @@ TwitterからWebhookを受け取る。
 
 ## Usage
 - サーバを構築し、必要なものをインストールおよび設定する。
+  - default.confを用意し、/etc/nginx/conf.d/に置く。
 - Let's Encryptを用いてSSLを導入する。
 - ./start_server で起動する。
 - tw.pyを用いて、TwitterサーバにCRCを依頼し、認証を済ませる。
