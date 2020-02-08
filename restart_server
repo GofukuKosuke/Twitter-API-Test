@@ -1,0 +1,4 @@
+#/bin/bash
+./stop_server
+rm nohup.out
+./start_server
