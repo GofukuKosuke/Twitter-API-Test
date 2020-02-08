@@ -24,4 +24,4 @@ TwitterからWebhookを受け取る。
   - いいねとRTの情報がデータベースに記録される。
 
 ## Author
-[御福宏佑 GofukuKosuke](https://github.com/GofukuKosuke)
+御福宏佑(Gofuku Kosuke): [GitHub](https://github.com/GofukuKosuke)
