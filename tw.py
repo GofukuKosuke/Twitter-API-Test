@@ -10,28 +10,15 @@ from requests_oauthlib import OAuth1Session
 import sys
 
 from db import db
-
-# TwitterからのWebhookを受け取る際のアドレス
-webhook_url = ''
-
-# Dev environment label
-dev_label = ''
-
-# Keys and tokens
-api_key = ''
-api_secret_key = ''
-access_token = ''
-access_token_secret = ''
-
-# 自分のid_str
-my_id_str = ''
+import const
 
 class OAuth:
     """
-    Twitter社とOAuthを用いてやり取りするためのメソッド群。
+    Twitter社とOAuthを用いてやり取りするためのstaticmethod群。
     """
-    oauth = OAuth1Session(api_key, api_secret_key, access_token, access_token_secret)
+    oauth = OAuth1Session(const.API_KEY, const.API_SECRET_KEY, const.ACCESS_TOKEN, const.ACCESS_TOKEN_SECRET)
 
+    @staticmethod
     def get_rate_limit():
         """
         レート制限情報を取得する。
@@ -48,9 +35,10 @@ class OAuth:
         res = OAuth.oauth.get(url)
         remaining = int(res.headers['x-rate-limit-remaining'])
         reset_utc = int(res.headers['X-Rate-Limit-Reset']) # UTC
-        reset_sec = reset_utc - time.mktime(datetime.datetime.now().timetuple()) #UTCを秒数に変換
+        reset_sec = reset_utc - time.mktime(datetime.now().timetuple()) #UTCを秒数に変換
         return remaining, reset_sec, res
 
+    @staticmethod
     def post_tweet(message):
         """
         ツイートする。
@@ -71,6 +59,7 @@ class OAuth:
         }
         return OAuth.oauth.post(url, params=params)
 
+    @staticmethod
     def crc():
         """
         CRCの依頼をする。
@@ -79,12 +68,13 @@ class OAuth:
         -------
         Responce
         """
-        url = 'https://api.twitter.com/1.1/account_activity/all/%s/webhooks.json' % dev_label
+        url = 'https://api.twitter.com/1.1/account_activity/all/%s/webhooks.json' % const.DEV_LABEL
         params = {
-            'url': webhook_url
+            'url': const.WEBHOOK_URL
         }
         return OAuth.oauth.post(url, params=params)
 
+    @staticmethod
     def get_webhooks():
         """
         全Webhookを取得する。
@@ -96,6 +86,7 @@ class OAuth:
         url = 'https://api.twitter.com/1.1/account_activity/all/webhooks.json'
         return OAuth.oauth.get(url)
 
+    @staticmethod
     def add_subscription():
         """
         サブスクリプションの追加(重複登録不可)
@@ -104,9 +95,10 @@ class OAuth:
         -------
         Responce
         """
-        url = 'https://api.twitter.com/1.1/account_activity/all/%s/subscriptions.json' % dev_label
+        url = 'https://api.twitter.com/1.1/account_activity/all/%s/subscriptions.json' % const.DEV_LABEL
         return OAuth.oauth.post(url)
 
+    @staticmethod
     def get_subscriptions():
         """
         サブスクリプションの確認(成功すると、HTTP 204 No Contentが返される)
@@ -115,14 +107,15 @@ class OAuth:
         -------
         Responce
         """
-        url = 'https://api.twitter.com/1.1/account_activity/all/%s/subscriptions.json' % dev_label
+        url = 'https://api.twitter.com/1.1/account_activity/all/%s/subscriptions.json' % const.DEV_LABEL
         return OAuth.oauth.get(url)
 
 class Parse:
     """
-    Twitter社からWebhookで送られてくるJSONを解析するためのメソッド群。
+    Twitter社からWebhookで送られてくるJSONを解析するためのstaticmethod群。
     """
 
+    @staticmethod
     def get_event_type(data):
         """
         イベントタイプを特定する。
@@ -147,6 +140,7 @@ class Parse:
                 return event_type
         return None # 例外
 
+    @staticmethod
     def parse_twitter_datetime(datetime_str):
         """
         Twitter社のdatetime文字列をdatetime型に変換する。
@@ -161,6 +155,7 @@ class Parse:
         """
         return datetime.strptime(datetime_str, '%a %b %d %H:%M:%S +0000 %Y')
 
+    @staticmethod
     def is_my_tweet(tweet_object):
         """
         Tweet Objectのツイートが自分のものかを判断する。
@@ -169,8 +164,9 @@ class Parse:
         -------
         bool
         """
-        return tweet_object['user']['id_str'] == my_id_str
+        return tweet_object['user']['id_str'] == const.MY_ID_STR
 
+    @staticmethod
     def is_reply_to_other(tweet_object):
         """
         Tweet Objectのツイートが他人へのリプライであるかを判断する。
@@ -184,12 +180,13 @@ class Parse:
         if to is None:
             return False
         # リプ先ユーザIDが存在して、それが自分なら、それは他人へのリプライではない
-        elif to == my_id_str:
+        elif to == const.MY_ID_STR:
             return False
         # 他人へのリプなら、それが真
         else:
             return True
 
+    @staticmethod
     def get_original_tweet_object(tweet_object):
         """
         RTであるTweet ObjectからRT元のTweet Objectを取得(無かったらNoneを返却)
@@ -198,8 +195,9 @@ class Parse:
 
 class DB:
     """
-    DB接続が必要な処理をまとめたメソッド群。
+    DB接続が必要な処理をまとめたstaticmethod群。
     """
+    @staticmethod
     def send_tweet_object(tweet_object):
         """
         Tweet Objectをデータベースに反映する。
@@ -209,6 +207,7 @@ class DB:
         stmt = 'INSERT INTO my_tweets (id_str, created_at, text) VALUES (%s, %s, %s)'
         db(stmt, (tweet_object['id_str'], created_at, tweet_object['text']))
 
+    @staticmethod
     def send_user_object(user_object):
         """
         User Objectをデータベースに反映する。
@@ -217,6 +216,7 @@ class DB:
         stmt = 'REPLACE INTO twitter_users (id_str, screen_name, name) VALUES (%s, %s, %s)'
         db(stmt, (user_object['id_str'], user_object['screen_name'], user_object['name']))
 
+    @staticmethod
     def send_like(raw_dict_data):
         """
         いいねイベントをデータベースに反映する。
@@ -246,6 +246,7 @@ class DB:
             stmt = 'INSERT INTO favorites (user_id_str, tweet_id_str, created_at) VALUES (%s, %s, %s)'
             db(stmt, (user_object['id_str'], tweet_object['id_str'], favorite_created_at))
 
+    @staticmethod
     def send_retweet(raw_dict_data):
         """
         tweet_create_eventを含むデータを入力し、それがRTならばRTをデータベースに反映する。
@@ -278,6 +279,7 @@ class DB:
                 stmt = 'INSERT INTO retweets (user_id_str, tweet_id_str, created_at) VALUES (%s, %s, %s)'
                 db(stmt, (user_object['id_str'], original_tweet_object['id_str'], tweet_created_at))
 
+    @staticmethod
     def parse_and_update_db(raw_str_data):
         """
         JSON文字列を元に、データベースを適切に更新する
